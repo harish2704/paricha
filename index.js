@@ -100,17 +100,17 @@ class AccessChecker {
     log( 'access: ' + access );
 
     if( !access ){
-      return AccessChecker.Permission( false, AccessChecker.MSG_DENIED );
+      return Promise.resolve( AccessChecker.Permission( false, AccessChecker.MSG_DENIED ) );
     }
 
     if( !access.when ){
-      return AccessChecker.Permission( true );
+      return Promise.resolve( AccessChecker.Permission( true ) );
     }
 
-    return Promise.resolve( access.when( hook ) )
+    return Promise.resolve( access.when( hook.params, hook ) )
       .then( function( status ){
         if( status ){
-          return hook;
+          return AccessChecker.Permission( true );
         }
         return AccessChecker.Permission( false, 'Access Denied' );
       });
