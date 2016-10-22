@@ -1,0 +1,31 @@
+{
+  "name": "parunth",
+  "version": "0.0.1",
+  "description": "A simple role based access control for Feathersjs services",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harish2704/parunth.git"
+  },
+  "keywords": [
+    "Feathersjs",
+    "ACL",
+    "access-control"
+  ],
+  "author": "Harish.K <harish2704@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/harish2704/parunth/issues"
+  },
+  "homepage": "https://github.com/harish2704/parunth#readme",
+  "dependencies": {
+    "lodash": "^4.16.4",
+    "simple-mocha": "0.0.9"
+  },
+  "devDependencies": {
+    "debug": "^2.2.0"
+  }
+}
