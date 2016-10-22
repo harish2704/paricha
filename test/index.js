@@ -2,6 +2,18 @@ require( 'simple-mocha' );
 const AccessChecker = require( '../index' );
 const assert = require('assert');
 const _ = require('lodash');
+const Promise = require('bluebird');
+
+const Bookmark = {
+  items:{
+    1:{
+      user: 113
+    }
+  },
+  get: function( id ){
+    return Promise.resolve( this.items[id] );
+  },
+};
 
 
 var testAcl = {
@@ -15,7 +27,22 @@ var testAcl = {
   user:{
     parent: 'guest',
     allow: [
-      'bookmark:create'
+      'bookmark:create',
+      {
+        action:'bookmark:update',
+        when: function( params, hook ){
+          return params.bookmark.user === params.user.id;
+        }
+      },
+      {
+        action:'bookmark:delete',
+        when: function( params, hook ){
+          return Bookmark.get( hook.id )
+          .then( function( bookmark ){
+            return bookmark.user === params.user.id;
+          });
+        }
+      }
     ]
   },
 
@@ -97,28 +124,50 @@ describe( 'AccessChecker', function(){
   });
 
 
-  it( 'should check the persmission properly', function( ){
+  it( 'should check the persmission properly', function( done ){
 
     const guestUser = { role: 'guest' };
-    const normalUser = { role: 'user' };
+    const normalUser = { role: 'user', id: 112 };
     const adminUser = { role: 'admin' };
     const getPermission = function( user, service, method ){
-      const params = { user };
-      const out = inst.getPermission( service, { method, params } );
-      return out.isGranted;
+      const params = { user, bookmark:{ user: 111 } };
+      const out = inst.getPermission( service, { method, params, id: 1 } );
+      return out;
     };
 
-    assert.ok( getPermission( guestUser, 'session',  'create' ) );
-    assert.ifError(  getPermission( guestUser, 'session',  'list' )  );
-    assert.ifError(  getPermission( guestUser, 'bookmark',  'create' )  );
+    Promise.coroutine( function*(){
+      let permission = yield  getPermission( guestUser, 'session',  'create' );
+      assert.ok( permission.isGranted );
+      permission = yield   getPermission( guestUser, 'session',  'list' )  ;
+      assert.ifError( permission.isGranted );
+      permission = yield   getPermission( guestUser, 'bookmark',  'create' )  ;
+      assert.ifError( permission.isGranted );
 
-    assert.ok(  getPermission( normalUser, 'session',  'create' )  );
-    assert.ok(  getPermission( normalUser, 'bookmark',  'create' )  );
-    assert.ifError(  getPermission( normalUser, 'session',  'list' )  );
+      permission = yield   getPermission( normalUser, 'session',  'create' )  ;
+      assert.ok( permission.isGranted );
+      permission = yield   getPermission( normalUser, 'bookmark',  'create' )  ;
+      assert.ok( permission.isGranted );
+      permission = yield   getPermission( normalUser, 'session',  'list' )  ;
+      assert.ifError( permission.isGranted );
+      permission = yield   getPermission( normalUser, 'bookmark',  'update' )  ;
+      assert.ifError( permission.isGranted );
 
-    assert.ok(  getPermission( adminUser, 'session',  'create' )  );
-    assert.ok(  getPermission( adminUser, 'bookmark',  'create' )  );
-    assert.ok(  getPermission( adminUser, 'session',  'list' )  );
+      normalUser.id = 111;
+      permission = yield   getPermission( normalUser, 'bookmark',  'update' )  ;
+      assert.ok( permission.isGranted );
+
+      normalUser.id = 113;
+      permission = yield   getPermission( normalUser, 'bookmark',  'delete' )  ;
+      assert.ok( permission.isGranted );
+
+      permission = yield   getPermission( adminUser, 'session',  'create' )  ;
+      assert.ok( permission.isGranted );
+      permission = yield   getPermission( adminUser, 'bookmark',  'create' )  ;
+      assert.ok( permission.isGranted );
+      permission = yield   getPermission( adminUser, 'session',  'list' )  ;
+      assert.ok( permission.isGranted );
+    })().asCallback( done );
+
   });
 
 });
