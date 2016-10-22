@@ -38,9 +38,9 @@ var testAcl = {
         action:'bookmark:delete',
         when: function( params, hook ){
           return Bookmark.get( hook.id )
-          .then( function( bookmark ){
-            return bookmark.user === params.user.id;
-          });
+            .then( function( bookmark ){
+              return bookmark.user === params.user.id;
+            });
         }
       }
     ]
@@ -124,7 +124,7 @@ describe( 'AccessChecker', function(){
   });
 
 
-  it( 'should check the persmission properly', function( done ){
+  describe( 'should check the persmission properly', function(){
 
     const guestUser = { role: 'guest' };
     const normalUser = { role: 'user', id: 112 };
@@ -135,38 +135,55 @@ describe( 'AccessChecker', function(){
       return out;
     };
 
-    Promise.coroutine( function*(){
-      let permission = yield  getPermission( guestUser, 'session',  'create' );
-      assert.ok( permission.isGranted );
-      permission = yield   getPermission( guestUser, 'session',  'list' )  ;
-      assert.ifError( permission.isGranted );
-      permission = yield   getPermission( guestUser, 'bookmark',  'create' )  ;
-      assert.ifError( permission.isGranted );
+    let permission;
 
-      permission = yield   getPermission( normalUser, 'session',  'create' )  ;
-      assert.ok( permission.isGranted );
-      permission = yield   getPermission( normalUser, 'bookmark',  'create' )  ;
-      assert.ok( permission.isGranted );
-      permission = yield   getPermission( normalUser, 'session',  'list' )  ;
-      assert.ifError( permission.isGranted );
-      permission = yield   getPermission( normalUser, 'bookmark',  'update' )  ;
-      assert.ifError( permission.isGranted );
 
-      normalUser.id = 111;
-      permission = yield   getPermission( normalUser, 'bookmark',  'update' )  ;
-      assert.ok( permission.isGranted );
+    it( 'should check permissions without any conditions', function( done ){
+      Promise.coroutine( function*(){
+        permission = yield  getPermission( guestUser, 'session',  'create' );
+        assert.ok( permission.isGranted );
+        permission = yield getPermission( guestUser, 'session',  'list' )  ;
+        assert.ifError( permission.isGranted );
+        permission = yield getPermission( guestUser, 'bookmark',  'create' )  ;
+        assert.ifError( permission.isGranted );
 
-      normalUser.id = 113;
-      permission = yield   getPermission( normalUser, 'bookmark',  'delete' )  ;
-      assert.ok( permission.isGranted );
+        permission = yield getPermission( normalUser, 'session',  'create' )  ;
+        assert.ok( permission.isGranted );
+        permission = yield getPermission( normalUser, 'bookmark',  'create' )  ;
+        assert.ok( permission.isGranted );
+        permission = yield getPermission( normalUser, 'session',  'list' )  ;
+        assert.ifError( permission.isGranted );
+        permission = yield getPermission( normalUser, 'bookmark',  'update' )  ;
+        assert.ifError( permission.isGranted );
 
-      permission = yield   getPermission( adminUser, 'session',  'create' )  ;
-      assert.ok( permission.isGranted );
-      permission = yield   getPermission( adminUser, 'bookmark',  'create' )  ;
-      assert.ok( permission.isGranted );
-      permission = yield   getPermission( adminUser, 'session',  'list' )  ;
-      assert.ok( permission.isGranted );
-    })().asCallback( done );
+        permission = yield getPermission( adminUser, 'session',  'create' )  ;
+        assert.ok( permission.isGranted );
+        permission = yield getPermission( adminUser, 'bookmark',  'create' )  ;
+        assert.ok( permission.isGranted );
+        permission = yield getPermission( adminUser, 'session',  'list' )  ;
+        assert.ok( permission.isGranted );
+      })().asCallback( done );
+    });
+
+
+    it( 'should check permissions with syncronous conditions', function( done ){
+      Promise.coroutine( function*(){
+        normalUser.id = 111;
+        permission = yield getPermission( normalUser, 'bookmark',  'update' )  ;
+        assert.ok( permission.isGranted );
+
+      })().asCallback( done );
+    });
+
+
+    it( 'should check permissions with syncronous conditions', function( done ){
+      Promise.coroutine( function*(){
+        normalUser.id = 113;
+        permission = yield getPermission( normalUser, 'bookmark',  'delete' )  ;
+        assert.ok( permission.isGranted );
+      })().asCallback( done );
+    });
+
 
   });
 
