@@ -1,7 +1,7 @@
 'use strict';
 /* ഓം ബ്രഹ്മാർപ്പണം  */
 
-const log = require('debug')('parunth');
+const log = require('debug')('paricha');
 
 
 /* Implementation of lodash.get function */
