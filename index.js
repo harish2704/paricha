@@ -79,13 +79,14 @@ class AccessChecker {
     const checker = this;
     return function( hook ){
       const params = hook.params;
-      const permission = checker.getPermission( serviceName, hook );
       log( 'Checking access for ' + serviceName + ' : ' + hook.method );
-
-      if( permission.isGranted ){
-        return hook;
-      }
-      return Promise.reject( permission.message );
+      return checker.getPermission( serviceName, hook )
+        .then( function( permission ){
+          if( permission.isGranted ){
+            return hook;
+          }
+          return Promise.reject( permission.message );
+        });
     };
   }
 
